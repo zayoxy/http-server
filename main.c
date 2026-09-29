@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_LISTEN_QUEUE 10
 #define PORT 3000
@@ -85,22 +86,30 @@ int main()
     if ((server_fd = socket(AF_INET, SOCK_STREAM /* TCP */, 0)) < 0)
     {
         perror("Couldn't open a socket...");
-        return 1;
+        exit(EXIT_FAILURE);
     }
     printf("Opened socket (sockfd: %d)\n", server_fd);
+
+    // Forcefully attaching socket to avoid "Address already in use" errors
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+    {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
 
     // Bind opened socket to address and port
     if (bind(server_fd, (struct sockaddr *)&sa_in, sizeof(sa_in)) < 0)
     {
         perror("Couldn't bind a socket...");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // Listen for incoming connections
     if (listen(server_fd, MAX_LISTEN_QUEUE) < 0)
     {
         perror("Couldn't listen on socket...");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // Wait for client to connect
@@ -109,7 +118,7 @@ int main()
     if ((client_socket = accept(server_fd, (struct sockaddr *)&sa_in, (socklen_t *)&sa_in_len)) < 0)
     {
         println_error("Couldn't accept an incoming socket connection...\n");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // Receive data client->server
@@ -148,5 +157,5 @@ int main()
         perror("Couldn't close socket...");
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

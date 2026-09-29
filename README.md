@@ -8,6 +8,8 @@ Simple HTTP server in C
 > - <https://man7.org/linux/man-pages/man2/bind.2.html>
 > - <https://thecodeforge.io/c-cpp/c-networking-sockets/>
 
+Mozilla HTTP reference: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages>
+
 ## Client
 
 Simulate client using netcat `nc` for now.

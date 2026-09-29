@@ -115,41 +115,47 @@ int main()
     // Wait for client to connect
     printf("Waiting for connection on %d:%d...\n", sa_in.sin_addr.s_addr, ntohs(sa_in.sin_port));
     int client_socket;
-    if ((client_socket = accept(server_fd, (struct sockaddr *)&sa_in, (socklen_t *)&sa_in_len)) < 0)
+
+    while (true)
     {
-        println_error("Couldn't accept an incoming socket connection...\n");
-        exit(EXIT_FAILURE);
+        if ((client_socket = accept(server_fd, (struct sockaddr *)&sa_in, (socklen_t *)&sa_in_len)) < 0)
+        {
+            println_error("Couldn't accept an incoming socket connection...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Receive data client->server
+        char request_buffer[REQUEST_BUFFER_SIZE];
+        read(client_socket, request_buffer, REQUEST_BUFFER_SIZE);
+        printf("Raw request received '%s' from client\n", request_buffer); // TODO: DEBUG PRINT
+
+        // TODO: for now, we only parse the request without the headers. Take that into account later
+        http_request parsed_request = {};
+        http_raw_request_parse(request_buffer, &parsed_request);
+
+        // Server response
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages
+        char server_response[SERVER_RESPONSE_BUFFER_SIZE];
+        switch (parsed_request.type)
+        {
+        case GET:
+            // FIXME: Get index.html file content instead of hardcoded response, just for tesing purposes for now.
+            const char content[] = "<!DOCTYPE html><html lang=\"en\"><body><h1>Hello from custom C http server!</h1></body></html>";
+            // WARNING: The Content-Length is VERY important and must contains the lenght of the HTML (-1 since we don't want '\0'), otherwise the browser may load indefinitly.
+            sprintf(server_response, "%s 200 OK\nServer: custom-c/0.0.1\nContent-Length: %d\nContent-Type: text/html\n\n%s", parsed_request.http_version, sizeof(content) - 1, content);
+            break;
+
+            // FIXME: Not implemented yet
+        case POST:
+        default:
+            strcpy(server_response, "Not implemented yet");
+            break;
+        }
+        size_t server_response_len = strnlen(server_response, SERVER_RESPONSE_BUFFER_SIZE);
+
+        send(client_socket, server_response, server_response_len, 0);
+        printf("Message sent back to the client\n");
     }
-
-    // Receive data client->server
-    char request_buffer[REQUEST_BUFFER_SIZE];
-    read(client_socket, request_buffer, REQUEST_BUFFER_SIZE);
-    printf("Raw request received '%s' from client\n", request_buffer); // TODO: DEBUG PRINT
-
-    // TODO: for now, we only parse the request without the headers. Take that into account later
-    http_request parsed_request = {};
-    http_raw_request_parse(request_buffer, &parsed_request);
-
-    // Server response
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages
-    char server_response[SERVER_RESPONSE_BUFFER_SIZE];
-    switch (parsed_request.type)
-    {
-    case GET:
-        // FIXME: Get index.html file content instead of hardcoded response, just for tesing purposes for now.
-        sprintf(server_response, "%s 200 OK\nServer: custom-c/0.0.1\nContent-Type: text/html\n\n<!DOCTYPE html><html lang=\"en\"><body><h1>Hello from custom C http server!</h1></body></html>", parsed_request.http_version);
-        break;
-
-        // FIXME: Not implemented yet
-    case POST:
-    default:
-        strcpy(server_response, "Not implemented yet");
-        break;
-    }
-    size_t server_response_len = strnlen(server_response, SERVER_RESPONSE_BUFFER_SIZE);
-
-    send(client_socket, server_response, server_response_len, 0);
-    printf("Message sent back to the client\n");
 
     close(client_socket);
     if (close(server_fd) < 0)

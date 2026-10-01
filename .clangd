@@ -1,0 +1,6 @@
+# clangd configuration file
+
+# https://zed.dev/docs/languages/c#clangd-force-detect-as-c
+# yaml-language-server: $schema=https://json.schemastore.org/clangd.json
+CompileFlags:
+  Add: [-xc]

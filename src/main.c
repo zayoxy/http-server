@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../include/map.h"
+
 #define MAX_LISTEN_QUEUE 10
 #define PORT 3000
 #define REQUEST_BUFFER_SIZE 1024
@@ -59,7 +61,30 @@ void http_raw_request_parse(char *raw_request, http_request *result) {
   printf("Version: %s\n", result->http_version);
 }
 
+void map_test() {
+  map_t *myMap = map_create(100);
+
+  char *key = "test", *key1 = "estt";
+  map_insert(myMap, key, "myValue");
+  map_insert(myMap, key1, "myValue2");
+
+  char *res;
+
+  map_get(myMap, key, &res);
+  printf("key: %s, value: %s\n", key, res);
+
+  map_get(myMap, key1, &res);
+  printf("key: %s, value: %s\n", key1, res);
+
+  map_destroy(myMap);
+
+  exit(EXIT_SUCCESS);
+}
+
 int main() {
+
+  // map_test();
+
   int server_fd;
   const struct sockaddr_in sa_in = {
       .sin_family = AF_INET,    // IPv4
